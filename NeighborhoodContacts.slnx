@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="neighborhoodcontacts.client/neighborhoodcontacts.client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="NeighborhoodContacts.Server/NeighborhoodContacts.Server.csproj" />
+</Solution>
