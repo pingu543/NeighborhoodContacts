@@ -29,8 +29,6 @@
 
   <ItemGroup>
     <Folder Include="Common\" />
-    <Folder Include="Features\" />
-    <Folder Include="Infrastructure\" />
   </ItemGroup>
 
 </Project>
