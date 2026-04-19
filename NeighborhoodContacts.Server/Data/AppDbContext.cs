@@ -7,6 +7,7 @@ namespace NeighborhoodContacts.Server.Data
     {
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<Property> Properties { get; set; } = null!;
+        public DbSet<PropertyGroup> PropertyGroups { get; set; } = null!; // new
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -33,6 +34,23 @@ namespace NeighborhoodContacts.Server.Data
                       .HasMaxLength(200);
 
                 entity.HasIndex(p => p.Address)
+                      .IsUnique();
+
+                entity.HasOne(p => p.PropertyGroup)
+                      .WithMany(pg => pg.Properties)
+                      .HasForeignKey(p => p.PropertyGroupId)
+                      .IsRequired();
+            });
+
+            modelBuilder.Entity<PropertyGroup>(entity =>
+            {
+                entity.HasKey(pg => pg.Id);
+
+                entity.Property(pg => pg.Name)
+                      .IsRequired()
+                      .HasMaxLength(100);
+
+                entity.HasIndex(pg => pg.Name)
                       .IsUnique();
             });
         }
