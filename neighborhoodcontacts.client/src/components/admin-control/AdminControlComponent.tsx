@@ -1,3 +1,11 @@
+import { useState, useEffect } from 'react'
+
+interface Property {
+    id: string,
+    address: string,
+    PropertyGroupId: string,
+}
+
 // A long bar with buttons:
 // Property Group.
 // - Dropdown to select property group (shows the name of the group).
@@ -20,8 +28,35 @@
 // - Cancel button
 
 function AdminControl() {
-  return (
-    <p>Hello world!</p>
+    const [propertyList, setPropertyList] = useState<Property[]>();
+
+    useEffect(() => {
+        const fetchProperties = async () => {
+            try {
+                const response = await fetch("/api/properties", {
+                    method: "GET",
+                    credentials: 'include',
+                    headers: { "Content-Type": "applications/json" }
+                });
+                const data = await response.json();
+                setPropertyList(data);
+                console.log(data);
+            }
+            catch (e) {
+                console.error("Error getting properties: " + e);
+            }
+        }
+        fetchProperties();
+    }, [])
+
+
+    return (
+    <div>
+      <p>Properties</p>
+      <select>
+         <option value="None">None</option>
+      </select>
+    </div>
   );
 }
 

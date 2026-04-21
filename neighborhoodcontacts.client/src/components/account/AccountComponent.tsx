@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import AdminControl from "../admin-control/AdminControlComponent";
 
 interface SignInResponse {
     ok?: boolean;
@@ -153,8 +154,11 @@ const AccountComponent: React.FC = () => {
                     </span>
                     <button className="btn btn-sm btn-outline-secondary" onClick={handleSignOut}>
                         Sign out
-                    </button>
-                </div>
+                        </button>
+                        <br></br>
+                        <AdminControl></AdminControl>
+                    </div>
+                
             )}
         </div>
     );
