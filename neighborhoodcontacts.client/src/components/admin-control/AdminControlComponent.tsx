@@ -1,8 +1,8 @@
+import React from "react";
+import PropertyGroupControl from "./PropertyGroupControl";
+
 // A long bar with buttons:
 // Property Group.
-// - Dropdown to select property group (shows the name of the group).
-//  The first item in the drop down is "All contacts" which shows all contacts and properties (will not include a property group in the endpoint call).
-//  Selecting a property group will show the contacts for that group and the properties in that group.
 // Add contact. When clicked, it opens a form with the following fields:
 // - Email (text input as username)
 // - Address (dropdown)
@@ -20,9 +20,26 @@
 // - Cancel button
 
 function AdminControl() {
-    return (
-        <p>Admin Control Placeholder</p>
-    );
+  const handleGroupChange = (groupId: string | null) => {
+    // Optionally handle selection at this level; other parts of the app also get the global event.
+    console.log("Selected property group:", groupId);
+  };
+
+  return (
+    <div className="mb-3 p-3 border rounded bg-light">
+      <PropertyGroupControl onChange={handleGroupChange} />
+
+      {/* TODO: add other admin controls (Add contact, Add/Edit property, etc.) here */}
+      <div className="mt-3">
+        <button className="btn btn-sm btn-outline-secondary me-2" disabled>
+          Contacts (TODO)
+        </button>
+        <button className="btn btn-sm btn-outline-secondary me-2" disabled>
+          Properties (TODO)
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default AdminControl;

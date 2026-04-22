@@ -24,13 +24,37 @@ const ContactsList: React.FC<Props> = ({ preferAdmin = false, pageSize = 10, onS
     const [page, setPage] = useState(1);
     const [error, setError] = useState<string | null>(null);
 
+    // Selected property group id when using admin endpoint; null means "All contacts"
+    const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+
+    useEffect(() => {
+        // Listen for property group changes emitted by the admin control
+        const handler = (ev: Event) => {
+            try {
+                const ce = ev as CustomEvent;
+                const gid = ce?.detail?.propertyGroupId ?? null;
+                setSelectedGroupId(gid);
+            } catch {
+                setSelectedGroupId(null);
+            }
+        };
+        window.addEventListener("admin:propertyGroupChanged", handler as EventListener);
+        return () => window.removeEventListener("admin:propertyGroupChanged", handler as EventListener);
+    }, []);
+
     useEffect(() => {
         let mounted = true;
         (async () => {
             setLoading(true);
             setError(null);
             try {
-                const endpoint = preferAdmin ? "/api/admin/contacts" : "/api/contacts";
+                // Build endpoint: if preferAdmin, optionally include propertyGroupId query param
+                let endpoint = preferAdmin ? "/api/admin/contacts" : "/api/contacts";
+                if (preferAdmin && selectedGroupId) {
+                    const qp = new URLSearchParams({ propertyGroupId: selectedGroupId });
+                    endpoint = `${endpoint}?${qp.toString()}`;
+                }
+
                 const res = await fetch(endpoint, { credentials: "include" });
 
                 if (!res.ok) {
@@ -54,7 +78,7 @@ const ContactsList: React.FC<Props> = ({ preferAdmin = false, pageSize = 10, onS
         return () => {
             mounted = false;
         };
-    }, [preferAdmin, onError]);
+    }, [preferAdmin, selectedGroupId, onError]);
 
     if (loading) return <div>Loading contacts…</div>;
     if (error) return <div className="text-danger">Error: {error}</div>;
