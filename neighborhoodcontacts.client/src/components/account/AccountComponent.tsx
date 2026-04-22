@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 // When not signed in:
@@ -22,6 +23,7 @@ interface SignInResponse {
 
 const AccountComponent: React.FC = () => {
     const { user, isSignedIn, refresh } = useAuth();
+    const navigate = useNavigate();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
@@ -75,12 +77,18 @@ const AccountComponent: React.FC = () => {
         }
     };
 
+    const goToMyProfile = () => {
+        if (!user?.id) return;
+        navigate(`/contacts/${user.id}`);
+    };
+
     // show header UI based on shared auth state
     return (
         <div className="d-flex flex-nowrap" role="region" aria-label="Account">
             {isSignedIn ? (
                 <div className="d-flex align-items-center">
                     <span className="small me-2">Hello, {user?.isAdmin ? `Admin ${user?.username}` : user?.username}.</span>
+                    <button className="btn btn-outline-secondary me-2" onClick={goToMyProfile}>My profile</button>
                     <button className="btn btn-outline-secondary" onClick={handleSignOut}>Sign out</button>
                 </div>
             ) : (

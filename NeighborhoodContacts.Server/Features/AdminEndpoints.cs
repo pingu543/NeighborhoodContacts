@@ -23,12 +23,27 @@ namespace NeighborhoodContacts.Server.Features
             app.MapPut("/api/admin/users/{id:guid}/property", UpdateUserProperty)
                .RequireAuthorization("Admin")
                .WithName("AdminUpdateUserProperty")
-               .WithTags("Admin", "Users");
+               .WithTags("Admin", "Users", "Properties");
 
             app.MapGet("/api/admin/property-groups", GetPropertyGroupsAdmin)
                .RequireAuthorization("Admin")
                .WithName("GetAdminPropertyGroups")
-               .WithTags("Admin", "Administration");
+               .WithTags("Admin", "PropertyGroups");
+
+            app.MapPost("/api/admin/property-groups", CreatePropertyGroup)
+               .RequireAuthorization("Admin")
+               .WithName("AdminCreatePropertyGroup")
+               .WithTags("Admin", "PropertyGroups");
+
+            app.MapPut("/api/admin/property-groups/{id:guid}", UpdatePropertyGroup)
+               .RequireAuthorization("Admin")
+               .WithName("AdminUpdatePropertyGroup")
+               .WithTags("Admin", "PropertyGroups");
+
+            app.MapDelete("/api/admin/property-groups/{id:guid}", DeletePropertyGroup)
+               .RequireAuthorization("Admin")
+               .WithName("AdminDeletePropertyGroup")
+               .WithTags("Admin", "PropertyGroups");
 
             return app;
         }
@@ -123,7 +138,7 @@ namespace NeighborhoodContacts.Server.Features
             return Results.NoContent();
         }
 
-        // Admin-only: return all property groups
+        // Return all property groups
         private static async Task<IResult> GetPropertyGroupsAdmin(AppDbContext db, CancellationToken ct)
         {
             var groups = await db.PropertyGroups
@@ -137,6 +152,71 @@ namespace NeighborhoodContacts.Server.Features
 
             return Results.Ok(groups);
         }
+
+        // Create property group
+        private static async Task<IResult> CreatePropertyGroup(CreatePropertyGroupRequest request, AppDbContext db, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(request.Name))
+                return Results.BadRequest(new { error = "Name is required." });
+
+            var name = request.Name.Trim();
+            if (name.Length < 1) return Results.BadRequest(new { error = "Name must be at least 1 character long." });
+
+            var exists = await db.PropertyGroups.AnyAsync(pg => pg.Name == name, ct);
+            if (exists) return Results.Conflict(new { error = "A property group with that name already exists." });
+
+            var group = new PropertyGroup
+            {
+                Id = Guid.NewGuid(),
+                Name = name
+            };
+
+            db.PropertyGroups.Add(group);
+            await db.SaveChangesAsync(ct);
+
+            var dto = new PropertyGroupDto { Id = group.Id, Name = group.Name };
+            return Results.Created($"/api/admin/property-groups/{group.Id}", dto);
+        }
+
+        // Update property group
+        private static async Task<IResult> UpdatePropertyGroup(Guid id, UpdatePropertyGroupRequest request, AppDbContext db, CancellationToken ct)
+        {
+            var group = await db.PropertyGroups.FirstOrDefaultAsync(pg => pg.Id == id, ct);
+            if (group == null) return Results.NotFound();
+
+            if (string.IsNullOrWhiteSpace(request.Name))
+                return Results.BadRequest(new { error = "Name is required." });
+
+            var name = request.Name.Trim();
+            if (name.Length < 1) return Results.BadRequest(new { error = "Name must be at least 1 character long." });
+
+            var conflict = await db.PropertyGroups.AnyAsync(pg => pg.Name == name && pg.Id != id, ct);
+            if (conflict) return Results.Conflict(new { error = "A property group with that name already exists." });
+
+            group.Name = name;
+            await db.SaveChangesAsync(ct);
+
+            return Results.NoContent();
+        }
+
+        // Delete property group
+        private static async Task<IResult> DeletePropertyGroup(Guid id, AppDbContext db, CancellationToken ct)
+        {
+            var group = await db.PropertyGroups.FirstOrDefaultAsync(pg => pg.Id == id, ct);
+            if (group == null) return Results.NotFound();
+
+            var hasProperties = await db.Properties.AnyAsync(p => p.PropertyGroupId == id, ct);
+            if (hasProperties)
+                return Results.BadRequest(new { error = "Property group has properties and cannot be deleted." });
+
+            db.PropertyGroups.Remove(group);
+            await db.SaveChangesAsync(ct);
+
+            return Results.NoContent();
+        }
+
+        private sealed record CreatePropertyGroupRequest(string Name);
+        private sealed record UpdatePropertyGroupRequest(string Name);
     }
 
     public sealed class PropertyGroupDto
