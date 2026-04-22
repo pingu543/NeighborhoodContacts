@@ -25,6 +25,11 @@ namespace NeighborhoodContacts.Server.Features
                .WithName("AdminUpdateUserProperty")
                .WithTags("Admin", "Users", "Properties");
 
+            app.MapPut("/api/admin/users/{id:guid}/password", AdminSetUserPassword)
+               .RequireAuthorization("Admin")
+               .WithName("AdminSetUserPassword")
+               .WithTags("Admin", "Users", "Password");
+
             app.MapGet("/api/admin/property-groups", GetPropertyGroupsAdmin)
                .RequireAuthorization("Admin")
                .WithName("GetAdminPropertyGroups")
@@ -114,6 +119,27 @@ namespace NeighborhoodContacts.Server.Features
             return Results.Created($"/api/users/{newUser.Id}", null);
         }
 
+        // Admin sets a new password for another user.
+        // No need to verify old password since admin wouldn't know it when helping user to reset.
+        private static async Task<IResult> AdminSetUserPassword(Guid id, SetPasswordRequest request, AppDbContext db, CancellationToken ct)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.NewPassword))
+                return Results.BadRequest(new { error = "NewPassword is required." });
+
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
+            if (user == null) return Results.NotFound();
+
+            var salt = RandomNumberGenerator.GetBytes(16);
+            var hash = AuthEndpoints.HashPassword(request.NewPassword.Trim(), salt);
+
+            user.PasswordSalt = Convert.ToBase64String(salt);
+            user.PasswordHash = Convert.ToBase64String(hash);
+
+            await db.SaveChangesAsync(ct);
+            return Results.NoContent();
+        }
+
+        private sealed record SetPasswordRequest(string NewPassword);
         private sealed record SignUpRequest(string Username, string Password);
         private sealed record UpdateUserPropertyRequest(Guid? PropertyId);
 

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using NeighborhoodContacts.Server.Data;
+using System.Security.Cryptography;
 
 namespace NeighborhoodContacts.Server.Features
 {
@@ -18,6 +19,11 @@ namespace NeighborhoodContacts.Server.Features
                .RequireAuthorization()
                .WithName("GetUserById")
                .WithTags("Users");
+
+            app.MapPut("/api/users/me/password", ChangeMyPassword)
+               .RequireAuthorization()
+               .WithName("ChangeMyPassword")
+               .WithTags("Users, Password");
 
             return app;
         }
@@ -105,5 +111,40 @@ namespace NeighborhoodContacts.Server.Features
 
             return Results.Ok(ownerDto);
         }
+
+        // Allow authenticated user to change their own password.
+        // Requires providing the current password.
+        private static async Task<IResult> ChangeMyPassword(ClaimsPrincipal user, ChangePasswordRequest request, AppDbContext db, CancellationToken ct)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.CurrentPassword) || string.IsNullOrWhiteSpace(request.NewPassword))
+                return Results.BadRequest(new { error = "CurrentPassword and NewPassword are required." });
+
+            var userIdClaim = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdClaim, out var uid)) return Results.Forbid();
+
+            var dbUser = await db.Users.FirstOrDefaultAsync(u => u.Id == uid, ct);
+            if (dbUser == null) return Results.NotFound();
+
+            // Verify current password
+            var storedSalt = Convert.FromBase64String(dbUser.PasswordSalt);
+            var storedHash = Convert.FromBase64String(dbUser.PasswordHash);
+            var suppliedHash = AuthEndpoints.HashPassword(request.CurrentPassword.Trim(), storedSalt);
+            if (!suppliedHash.SequenceEqual(storedHash))
+            {
+                return Results.BadRequest(new { error = "Current password is incorrect." });
+            }
+
+            // Update to new password
+            var newSalt = RandomNumberGenerator.GetBytes(16);
+            var newHash = AuthEndpoints.HashPassword(request.NewPassword.Trim(), newSalt);
+
+            dbUser.PasswordSalt = Convert.ToBase64String(newSalt);
+            dbUser.PasswordHash = Convert.ToBase64String(newHash);
+
+            await db.SaveChangesAsync(ct);
+            return Results.NoContent();
+        }
+
+        private sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
     }
 }
