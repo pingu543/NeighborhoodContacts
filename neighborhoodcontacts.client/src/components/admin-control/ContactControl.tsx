@@ -8,21 +8,38 @@ import React, { useEffect, useState } from "react";
 // - Delete property group button. Deletes the currently selected property group, and all properties and contacts in that group. Give clear warning.
 // - Add property group button. Opens a text entry field to enter the name of the new property group, and a confirm button to create it. Also has a cancel button.
 
-type PropertyGroup = { id: string; name: string };
+
+type Contact = {
+    id: string;
+    username: string
+    contactName: string,
+    contactNumber: string,
+    contactEmail: string,
+    propertyAddress: string,
+    isActive: boolean,
+    isVisible: boolean
+};
 
 type Props = {
   onChange?: (groupId: string | null) => void;
 };
 
-const PropertyGroupControl: React.FC<Props> = ({ onChange }) => {
-    const [groups, setGroups] = useState<PropertyGroup[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedId, setSelectedId] = useState<string>("");
-  const [adding, setAdding] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [editing, setEditing] = useState(false);
-  const [editName, setEditName] = useState("");
+const ContactControl: React.FC<Props> = ({ onChange }) => {
+    const [contacts, setContacts] = useState<Contact[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [selectedId, setSelectedId] = useState<string>("");
+    const [adding, setAdding] = useState(false);
+    const [newContact, setNewContact] = useState<Contact>();
+    const [newContactName, setNewContactName] = useState<string>("");
+    const [newUsername, setNewUsername] = useState<string>("");
+    const [newContactNumber, setNewContactNumber] = useState<string>("");
+    const [newContactEmail, setNewContactEmail] = useState<string>("");
+    const [newContactAddress, setNewContactAddress] = useState<string>("");
+    const [newIsActive, setNewIsActive] = useState(true);
+    const [newIsVisible, setNewIsVisible] = useState(true);
+    const [editing, setEditing] = useState(false);
+    const [editName, setEditName] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -30,12 +47,11 @@ const PropertyGroupControl: React.FC<Props> = ({ onChange }) => {
       setLoading(true);
       setError(null);
       try {
-          const res = await fetch("/api/admin/property-groups",
-              { credentials: "include" });
-        if (!res.ok) throw new Error(`Failed to load property groups (${res.status})`);
-          const list: PropertyGroup[] = await res.json();
+        const res = await fetch("/api/admin/contacts", { credentials: "include" });
+        if (!res.ok) throw new Error(`Failed to load contacts (${res.status})`);
+        const list: Contact[] = await res.json();
         if (!mounted) return;
-        setGroups(list);
+        setContacts(list);
       } catch (err) {
         if (mounted) setError(err instanceof Error ? err.message : String(err));
       } finally {
@@ -48,17 +64,17 @@ const PropertyGroupControl: React.FC<Props> = ({ onChange }) => {
   useEffect(() => {
     const payload = selectedId === "" ? null : selectedId;
     onChange?.(payload);
-    window.dispatchEvent(new CustomEvent("admin:propertyGroupChanged", { detail: { propertyGroupId: payload } }));
+    window.dispatchEvent(new CustomEvent("admin:Contact Changed", { detail: { propertyGroupId: payload } }));
   }, [selectedId, onChange]);
 
   const refresh = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/property-groups", { credentials: "include" });
-      if (!res.ok) throw new Error(`Failed to load property groups (${res.status})`);
-      const list: PropertyGroup[] = await res.json();
-      setGroups(list);
+      const res = await fetch("/api/admin/contacts", { credentials: "include" });
+      if (!res.ok) throw new Error(`Failed to load contacts (${res.status})`);
+        const list: Contact[] = await res.json();
+      setContacts(list);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -67,21 +83,37 @@ const PropertyGroupControl: React.FC<Props> = ({ onChange }) => {
   };
 
   const handleAdd = async () => {
-    if (!newName.trim()) return setError("Name is required.");
-    setError(null);
+    if (!newUsername.trim()) return setError("Username is required.");
+    if (!newContactName.trim()) return setError("ContactName is required.");
+    if (!newContactNumber.trim()) return setError("ContactNumber is required.");
+    if (!newContactAddress.trim()) return setError("ContactAddress is required.");
+    if (!newContactEmail.trim()) return setError("ContactEmail is required.");
+      setError(null);
+
+    
     try {
-      const res = await fetch("/api/admin/property-groups", {
+      const res = await fetch("/api/admin/contacts", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName.trim() }),
+          body: JSON.stringify({
+              username: newUsername.trim(),
+              contactName: newContactName.trim(),
+              contactNumber: newContactNumber.trim(),
+              contactEmail: newContactEmail.trim(),
+              contactAddress: newContactAddress.trim(),
+          }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         throw new Error(body?.error ?? `Create failed (${res.status})`);
       }
-      await refresh();
-      setNewName("");
+    await refresh();
+    setNewUsername("");
+    setNewContactName("");
+    setNewContactEmail("");
+    setNewContactNumber("");
+    setNewContactAddress("");
       setAdding(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -90,9 +122,9 @@ const PropertyGroupControl: React.FC<Props> = ({ onChange }) => {
 
   const startEdit = () => {
     if (!selectedId) return;
-    const g = groups.find((x) => x.id === selectedId);
+    const g = contacts.find((x) => x.id === selectedId);
     if (!g) return;
-    setEditName(g.name);
+    setEditName(g.username);
     setEditing(true);
   };
 
@@ -101,7 +133,7 @@ const PropertyGroupControl: React.FC<Props> = ({ onChange }) => {
     if (!editName.trim()) return setError("Name is required.");
     setError(null);
     try {
-      const res = await fetch(`/api/admin/property-groups/${selectedId}`, {
+      const res = await fetch(`/api/admin/contacts/${selectedId}`, {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -120,12 +152,12 @@ const PropertyGroupControl: React.FC<Props> = ({ onChange }) => {
 
   const handleDelete = async () => {
     if (!selectedId) return;
-    const group = groups.find((g) => g.id === selectedId);
-    const name = group?.name ?? "this group";
+    const group = contacts.find((g) => g.id === selectedId);
+    const name = group?.username ?? "this group";
     if (!window.confirm(`Delete property group "${name}"? This will fail if the group has properties. This operation is permanent.`)) return;
     setError(null);
     try {
-      const res = await fetch(`/api/admin/property-groups/${selectedId}`, {
+      const res = await fetch(`/api/admin/contacts/${selectedId}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -142,7 +174,7 @@ const PropertyGroupControl: React.FC<Props> = ({ onChange }) => {
 
   return (
     <div className="d-flex align-items-center gap-2">
-      <label className="form-label mb-0 me-2">Property group</label>
+      <label className="form-label mb-0 me-2">Contact Control </label>
 
       {loading ? (
         <div>Loading groups…</div>
@@ -151,23 +183,35 @@ const PropertyGroupControl: React.FC<Props> = ({ onChange }) => {
       ) : (
         <select className="form-select form-select-sm w-auto" value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
           <option value="">All contacts</option>
-          {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+          {contacts.map((g) => <option key={g.id} value={g.id}>{g.username}</option>)}
         </select>
       )}
 
       <div className="ms-2">
         <button className="btn btn-sm btn-outline-secondary me-1" onClick={startEdit} disabled={!selectedId || editing || adding}>Edit</button>
         <button className="btn btn-sm btn-outline-danger me-1" onClick={handleDelete} disabled={!selectedId || editing || adding}>Delete</button>
-        <button className="btn btn-sm btn-primary" onClick={() => { setAdding((a) => !a); setEditing(false); setError(null); setNewName(""); }}>
+        <button className="btn btn-sm btn-primary" onClick={() => { setAdding((a) => !a); setEditing(false); setError(null); }}>
           {adding ? "Cancel" : "Add"}
         </button>
       </div>
 
       {adding && (
         <div className="mt-2 d-flex gap-2 align-items-center">
-          <input className="form-control form-control-sm w-auto" placeholder="New group name" value={newName} onChange={(e) => setNewName(e.target.value)} />
-          <button className="btn btn-sm btn-success" onClick={handleAdd}>Confirm</button>
-          <button className="btn btn-sm btn-outline-secondary" onClick={() => { setAdding(false); setNewName(""); setError(null); }}>Cancel</button>
+            <input className="form-control form-control-sm w-auto" placeholder="Username" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} />
+            <input className="form-control form-control-sm w-auto" placeholder="Name" value={newContactName} onChange={(e) => setNewContactName(e.target.value)} />
+            <input className="form-control form-control-sm w-auto" placeholder="Phone Number" value={newContactNumber} onChange={(e) => setNewContactNumber(e.target.value)} />
+            <input className="form-control form-control-sm w-auto" placeholder="Email" value={newContactEmail} onChange={(e) => setNewContactEmail(e.target.value)} />
+            <input className="form-control form-control-sm w-auto" placeholder="Address" value={newContactAddress} onChange={(e) => setNewContactAddress(e.target.value)} />
+            <button className="btn btn-sm btn-success" onClick={handleAdd}>Confirm</button>
+                  <button className="btn btn-sm btn-outline-secondary" onClick={() => {
+                      setAdding(false);
+                      setNewUsername("");
+                      setNewContactName("");
+                      setNewContactEmail("");
+                      setNewContactNumber("");
+                      setNewContactAddress("");
+                      setError(null);
+                  }}>Cancel</button>
         </div>
       )}
 
@@ -182,4 +226,4 @@ const PropertyGroupControl: React.FC<Props> = ({ onChange }) => {
   );
 };
 
-export default PropertyGroupControl;
+export default ContactControl;
