@@ -20,6 +20,16 @@ namespace NeighborhoodContacts.Server.Features
                .WithName("AdminCreateUser")
                .WithTags("Admin", "Users");
 
+            app.MapPut("/api/admin/users/{id:guid}/property", UpdateUserProperty)
+               .RequireAuthorization("Admin")
+               .WithName("AdminUpdateUserProperty")
+               .WithTags("Admin", "Users");
+
+            app.MapGet("/api/admin/property-groups", GetPropertyGroupsAdmin)
+               .RequireAuthorization("Admin")
+               .WithName("GetAdminPropertyGroups")
+               .WithTags("Admin", "Administration");
+
             return app;
         }
 
@@ -90,5 +100,48 @@ namespace NeighborhoodContacts.Server.Features
         }
 
         private sealed record SignUpRequest(string Username, string Password);
+        private sealed record UpdateUserPropertyRequest(Guid? PropertyId);
+
+        private static async Task<IResult> UpdateUserProperty(Guid id, UpdateUserPropertyRequest request, AppDbContext db, CancellationToken ct)
+        {
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
+            if (user == null) return Results.NotFound();
+
+            if (request.PropertyId == null)
+            {
+                user.PropertyId = null;
+            }
+            else
+            {
+                var propExists = await db.Properties.AnyAsync(p => p.Id == request.PropertyId.Value, ct);
+                if (!propExists) return Results.BadRequest(new { error = "Property not found." });
+
+                user.PropertyId = request.PropertyId;
+            }
+
+            await db.SaveChangesAsync(ct);
+            return Results.NoContent();
+        }
+
+        // Admin-only: return all property groups
+        private static async Task<IResult> GetPropertyGroupsAdmin(AppDbContext db, CancellationToken ct)
+        {
+            var groups = await db.PropertyGroups
+                                 .AsNoTracking()
+                                 .Select(pg => new PropertyGroupDto
+                                 {
+                                     Id = pg.Id,
+                                     Name = pg.Name
+                                 })
+                                 .ToListAsync(ct);
+
+            return Results.Ok(groups);
+        }
+    }
+
+    public sealed class PropertyGroupDto
+    {
+        public Guid Id { get; init; }
+        public string Name { get; init; } = string.Empty;
     }
 }

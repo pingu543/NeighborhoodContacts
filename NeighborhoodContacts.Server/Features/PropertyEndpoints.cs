@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using NeighborhoodContacts.Server.Data;
 
@@ -8,32 +8,29 @@ namespace NeighborhoodContacts.Server.Features
     {
         public static void MapPropertyEndpoints(this IEndpointRouteBuilder app)
         {
-            app.MapGet("/api/property-groups", GetPropertyGroups)
-               .RequireAuthorization("Admin")
-               .WithName("GetPropertyGroups")
-               .WithTags("Administration");
+            // Authenticated users: get the name of the property group for the caller's property
+            app.MapGet("/api/property-group/me", GetMyPropertyGroupName)
+               .RequireAuthorization()
+               .WithName("GetMyPropertyGroup")
+               .WithTags("Property");
         }
 
-        // Admin-only: return all property groups
-        // Authorization is enforced by the endpoint mapping.
-        private static async Task<IResult> GetPropertyGroups(AppDbContext db, CancellationToken ct)
+        // Return the name of the property group for the authenticated user's property.
+        //  - 200: propertyGroupName: your group name
+        //  - 404: no property or no property group for this user
+        //  - 403: missing/invalid user id claim
+        private static async Task<IResult> GetMyPropertyGroupName(ClaimsPrincipal user, AppDbContext db, CancellationToken ct)
         {
-            var groups = await db.PropertyGroups
-                                 .AsNoTracking()
-                                 .Select(pg => new PropertyGroupDto
-                                 {
-                                     Id = pg.Id,
-                                     Name = pg.Name
-                                 })
-                                 .ToListAsync(ct);
+            var userId = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userId, out var uid)) return Results.Forbid();
 
-            return Results.Ok(groups);
+            var name = await db.Users
+                               .AsNoTracking()
+                               .Where(u => u.Id == uid)
+                               .Select(u => u.Property != null && u.Property.PropertyGroup != null ? u.Property.PropertyGroup.Name : null)
+                               .FirstOrDefaultAsync(ct);
+
+            return name == null ? Results.NotFound() : Results.Ok(new { propertyGroupName = name });
         }
-    }
-
-    public sealed class PropertyGroupDto
-    {
-        public Guid Id { get; init; }
-        public string Name { get; init; } = string.Empty;
     }
 }
