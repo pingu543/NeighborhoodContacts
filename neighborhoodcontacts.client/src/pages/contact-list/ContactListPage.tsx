@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import ContactsList from "../../components/contacts/ContactsList";
 import AdminControl from "../../components/admin-control/AdminControlComponent";
 import { useAuth } from "../../context/AuthContext";
+import {Document } from 'react-pdf'
 
 // This page shows a list of contacts. It also has a button to download the contacts as a PDF.
 // Will only show the included components if signed in.
@@ -31,10 +32,22 @@ function ContactListPage() {
                     <div>
                         <ContactsList preferAdmin={isAdmin} onSelect={handleSelect} pageSize={10} onError={(m) => setError(m)} />
                         <div className="mt-3">
-                            <button className="btn btn-sm btn-primary" onClick={() => {
-                                void fetch("/api/contacts/download-pdf", { credentials: "include" })
-                                    .then(() => alert("Download requested"))
-                                    .catch(() => alert("Download failed"));
+                            <button className="btn btn-sm btn-primary" onClick={async () => {
+                                try {
+                                    const response = await fetch("/api/contacts/download-pdf", { credentials: "include" })
+                                    const blob = await response.blob();
+                                    const url = window.URL.createObjectURL(blob);
+                                    const link = document.createElement('a');
+                                    link.href = url;
+                                    link.setAttribute('download', 'ContactReport.pdf');
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    link.remove();
+                                    window.URL.revokeObjectURL(url);
+                                }
+                                catch (e) {
+                                    alert("Error Downloading PDF: " + e)
+                                }
                             }}>
                                 Download PDF
                             </button>
