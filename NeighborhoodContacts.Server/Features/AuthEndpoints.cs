@@ -13,7 +13,6 @@ namespace NeighborhoodContacts.Server.Features
 {
     public static class AuthEndpoints
     {
-
         public static IEndpointRouteBuilder MapAuthEndpoints(this IEndpointRouteBuilder app)
         {
             app.MapPost("/api/auth/sign-in", SignIn)
@@ -21,12 +20,12 @@ namespace NeighborhoodContacts.Server.Features
                .WithName("SignIn")
                .WithTags("Authentication");
 
-            // Require the "Admin" policy (defined in dependency injection) to create accounts.
-            app.MapPost("/api/auth/sign-up", SignUp)
-               .RequireAuthorization("Admin")
-               .WithName("SignUp")
+            app.MapPost("/api/auth/sign-out", (Delegate)SignOut)
+               .AllowAnonymous()
+               .WithName("SignOut")
                .WithTags("Authentication");
 
+            // sign-up moved to AdminEndpoints
             return app;
         }
 
@@ -108,7 +107,7 @@ namespace NeighborhoodContacts.Server.Features
             {
                 HttpOnly = true,
                 Secure = httpContext.Request.IsHttps,
-                SameSite = SameSiteMode.Strict,
+                SameSite = SameSiteMode.None, // allow cross-site
                 Path = "/",
                 Expires = new DateTimeOffset(expiresAtUtc),
                 IsEssential = true
@@ -120,60 +119,24 @@ namespace NeighborhoodContacts.Server.Features
             return Results.Ok(new SignInResponse(dbUser.Username, dbUser.IsAdmin));
         }
 
-        // Create account (admin-only)
-        // Admin creates accounts for users. Authorization policy ensures caller is admin, so no DB admin check here.
-        // Returns 201 with a generic location since the client will stay on the same page and account.
-        private static async Task<IResult> SignUp(SignUpRequest request, AppDbContext dbContext, ClaimsPrincipal user)
+        // Sign out
+        // Removes the auth cookie so the client is signed out.
+        private static async Task<IResult> SignOut(HttpContext httpContext)
         {
-            if (string.IsNullOrWhiteSpace(request.Username))
+            var cookieOptions = new CookieOptions
             {
-                return Results.BadRequest(new { error = "Username is required." });
-            }
-
-            if (string.IsNullOrWhiteSpace(request.Password))
-            {
-                return Results.BadRequest(new { error = "Password is required." });
-            }
-
-            var username = request.Username.Trim();
-            var password = request.Password.Trim();
-
-            if (username.Length < 3)
-            {
-                return Results.BadRequest(new { error = "Username must be at least 3 characters long." });
-            }
-
-            if (password.Length < 8)
-            {
-                return Results.BadRequest(new { error = "Password must be at least 8 characters long." });
-            }
-
-            var exists = await dbContext.Users.AnyAsync(u => u.Username == username);
-            if (exists)
-            {
-                return Results.Conflict(new { error = "Username is already taken." });
-            }
-
-            var salt = RandomNumberGenerator.GetBytes(16);
-            var hash = HashPassword(password, salt);
-
-            var newUser = new User
-            {
-                Id = Guid.NewGuid(),
-                Username = username,
-                PasswordSalt = Convert.ToBase64String(salt),
-                PasswordHash = Convert.ToBase64String(hash),
-                IsActive = true,
-                IsVisible = true,
-                IsAdmin = false,
-                Created = DateTime.UtcNow
+                HttpOnly = true,
+                Secure = httpContext.Request.IsHttps,
+                SameSite = SameSiteMode.None,
+                Path = "/",
+                Expires = DateTimeOffset.UtcNow.AddDays(-1),
+                IsEssential = true
             };
 
-            dbContext.Users.Add(newUser);
-            await dbContext.SaveChangesAsync();
+            // Ensure the cookie is cleared with the same attributes used when setting it.
+            httpContext.Response.Cookies.Delete("AuthToken", cookieOptions);
 
-            // Return 201 with a generic location.
-            return Results.Created("/users", null);
+            return Results.Ok();
         }
 
         public static byte[] HashPassword(string password, byte[] salt)
@@ -185,7 +148,5 @@ namespace NeighborhoodContacts.Server.Features
 
         private sealed record SignInRequest(string Username, string Password);
         private sealed record SignInResponse(string Username, bool IsAdmin);
-
-        private sealed record SignUpRequest(string Username, string Password);
     }
 }

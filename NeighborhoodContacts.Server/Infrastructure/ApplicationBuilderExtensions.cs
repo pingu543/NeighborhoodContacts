@@ -1,16 +1,31 @@
-﻿using NeighborhoodContacts.Server.Features;
+﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Hosting;
+using NeighborhoodContacts.Server.Features;
 
 namespace NeighborhoodContacts.Server.Infrastructure
 {
     public static class ApplicationBuilderExtensions
     {
-        // Setup HTTPS redirection, static files, authentication, and authorization.
+        // Configure the HTTP pipeline in one place.
         public static WebApplication UseApplicationPipeline(this WebApplication app)
         {
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                app.UseExceptionHandler("/Error");
+                app.UseHsts();
+            }
+
             app.UseHttpsRedirection();
 
-            // Serve files from wwwroot (JS/CSS/index.html)
+            // Serve SPA static files from wwwroot (JS/CSS/index.html)
             app.UseStaticFiles();
+
+            // Routing must be added before auth middleware when using endpoint routing.
+            app.UseRouting();
 
             app.UseAuthentication();
             app.UseAuthorization();
@@ -18,13 +33,16 @@ namespace NeighborhoodContacts.Server.Infrastructure
             return app;
         }
 
-        // Map API endpoints and SPA fallback
+        // Map feature endpoint groups and SPA fallback from a single place.
         public static WebApplication MapApplicationEndpoints(this WebApplication app)
         {
             app.MapAuthEndpoints();
+            app.MapUsersEndpoints();
+            app.MapAdminEndpoints();
             app.MapContactEndpoints();
+            app.MapPropertyEndpoints();
 
-            // Ensure client-side routing works
+            // SPA fallback for client-side routing (serve index.html)
             app.MapFallbackToFile("index.html");
 
             return app;

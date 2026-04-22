@@ -38,6 +38,22 @@ namespace NeighborhoodContacts.Server.Infrastructure
                         ValidateLifetime = true,
                         ClockSkew = TimeSpan.Zero
                     };
+
+                    // Read token from cookie (AuthToken) so HttpOnly cookie auth works
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            if (string.IsNullOrEmpty(context.Token))
+                            {
+                                if (context.Request.Cookies.TryGetValue("AuthToken", out var token) && !string.IsNullOrEmpty(token))
+                                {
+                                    context.Token = token;
+                                }
+                            }
+                            return Task.CompletedTask;
+                        }
+                    };
                 });
 
             // Register authorization policy for admins

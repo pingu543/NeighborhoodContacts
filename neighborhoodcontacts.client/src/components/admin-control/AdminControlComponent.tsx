@@ -20,9 +20,9 @@
 // - Cancel button
 
 function AdminControl() {
-  return (
-    <p>Hello world!</p>
-  );
+    return (
+        <p>Admin Control Placeholder</p>
+    );
 }
 
 export default AdminControl;
