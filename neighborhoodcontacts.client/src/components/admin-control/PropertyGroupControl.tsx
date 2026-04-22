@@ -149,7 +149,7 @@ const PropertyGroupControl: React.FC<Props> = ({ onChange }) => {
         <div className="text-danger">{error}</div>
       ) : (
         <select className="form-select form-select-sm w-auto" value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
-          <option value="">All contacts</option>
+          <option value="">All property groups</option>
           {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
         </select>
       )}

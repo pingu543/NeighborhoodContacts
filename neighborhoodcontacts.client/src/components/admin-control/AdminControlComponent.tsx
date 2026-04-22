@@ -1,4 +1,5 @@
 import PropertyGroupControl from "./PropertyGroupControl";
+import PropertyControl from "./PropertyControl";
 
 // A long bar with buttons:
 // Property Group.
@@ -28,12 +29,10 @@ function AdminControl() {
     return (
         <div className="mb-3 p-3 border rounded bg-light">
             <PropertyGroupControl onChange={handleGroupChange} />
+            <PropertyControl />
 
             {/* TODO: add other admin controls (Add contact, Add/Edit property, etc.) here */}
             <div className="mt-3">
-                <button className="btn btn-sm btn-outline-secondary me-2" disabled>
-                    Properties (TODO)
-                </button>
                 <button className="btn btn-sm btn-outline-secondary me-2" disabled>
                     Contacts (TODO)
                 </button>
