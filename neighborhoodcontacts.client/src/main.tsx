@@ -8,8 +8,8 @@ createRoot(document.getElementById('root')!).render(
     <StrictMode>
         <BrowserRouter>
             <Routes>
-                <Route element={<App />}>
-                    <Route index element={<App /> }></Route>
+                <Route path="/" element={<App />}>
+                   
                 </Route>
 
             </Routes>
