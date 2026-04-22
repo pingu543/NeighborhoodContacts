@@ -12,9 +12,30 @@
 // Admin will also have a delete button.
 // Admin can see and edit Property, IsActive, IsVisible, IsAdmin.
 
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import ContactsList from "../../components/contacts/ContactsList";
+import AdminControl from "../../components/admin-control/AdminControlComponent";
+import { useAuth } from "../../context/AuthContext";
+
+
 function ContactDetailsPage() {
+    const { isSignedIn, isAdmin } = useAuth();
+    const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
+
   return (
-    <p>Hello world!</p>
+      <div>
+          {isSignedIn === null ? (
+              <div>Checking sign-in…</div>
+          ) : isSignedIn === false ? (
+              <div className="mb-3">Please sign in to view this contact.</div>
+          ) : ( 
+                      <div>
+                        <ContactsList></ContactsList>
+                      </div>
+          )}
+      </div>
   );
 }
 
