@@ -1,4 +1,3 @@
-import React from "react";
 import PropertyGroupControl from "./PropertyGroupControl";
 
 // A long bar with buttons:
@@ -14,32 +13,33 @@ import PropertyGroupControl from "./PropertyGroupControl";
 // - Cancel button
 // Edit property.
 // - Dropdown to select property to edit.
+// - Dropdown to select new property group (prefilled with the current property group).
 // - Text field for full address (prefilled with the current address).
 // - Confirm button
 // - Delete button
 // - Cancel button
 
 function AdminControl() {
-  const handleGroupChange = (groupId: string | null) => {
-    // Optionally handle selection at this level; other parts of the app also get the global event.
-    console.log("Selected property group:", groupId);
-  };
+    const handleGroupChange = (groupId: string | null) => {
+        // Optionally handle selection at this level; other parts of the app also get the global event.
+        console.log("Selected property group:", groupId);
+    };
 
-  return (
-    <div className="mb-3 p-3 border rounded bg-light">
-      <PropertyGroupControl onChange={handleGroupChange} />
+    return (
+        <div className="mb-3 p-3 border rounded bg-light">
+            <PropertyGroupControl onChange={handleGroupChange} />
 
-      {/* TODO: add other admin controls (Add contact, Add/Edit property, etc.) here */}
-      <div className="mt-3">
-        <button className="btn btn-sm btn-outline-secondary me-2" disabled>
-          Contacts (TODO)
-        </button>
-        <button className="btn btn-sm btn-outline-secondary me-2" disabled>
-          Properties (TODO)
-        </button>
-      </div>
-    </div>
-  );
+            {/* TODO: add other admin controls (Add contact, Add/Edit property, etc.) here */}
+            <div className="mt-3">
+                <button className="btn btn-sm btn-outline-secondary me-2" disabled>
+                    Properties (TODO)
+                </button>
+                <button className="btn btn-sm btn-outline-secondary me-2" disabled>
+                    Contacts (TODO)
+                </button>
+            </div>
+        </div>
+    );
 }
 
 export default AdminControl;
