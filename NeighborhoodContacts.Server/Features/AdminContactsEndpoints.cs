@@ -1,5 +1,6 @@
 using Azure.Core;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
 using NeighborhoodContacts.Server.Data;
 using NeighborhoodContacts.Server.Data.Entities;
 
@@ -56,19 +57,33 @@ namespace NeighborhoodContacts.Server.Features
             if (request == null || string.IsNullOrWhiteSpace(request.Username))
                 return Results.BadRequest(new { error = "Username is required." });
 
+            if (string.IsNullOrWhiteSpace(request.Password))
+                return Results.BadRequest(new { error = "Password is required." });
+
             var username = request.Username.Trim();
+            var password = request.Password.Trim();
+
             if (username.Length < 1) return Results.BadRequest(new { error = "Name must be at least 1 character long." });
+            if (password.Length < 1) return Results.BadRequest(new { error = "Password must be at least 1 character long." });
 
             var exists = await db.Users.AnyAsync(u => u.Username == username, ct);
             if (exists) return Results.Conflict(new { error = "A contact with that username already exists." });
 
-            var property = await db.Properties.Where(p => p.Address == request.ContactAddress).FirstAsync();
-            if (property == null) return Results.Conflict(new { error = "The contacts property doesn't exist" });
+            if (request.PropertyId == null || request.PropertyId == Guid.Empty)
+                return Results.BadRequest(new { error = "PropertyId is required." });
+
+            var property = await db.Properties.FindAsync(new object[] { request.PropertyId.Value }, ct);
+            if (property == null) return Results.Conflict(new { error = "The selected property doesn't exist." });
+
+            var salt = RandomNumberGenerator.GetBytes(16);
+            var hash = AuthEndpoints.HashPassword(password, salt);
 
             var user = new User
             {
                 Id = Guid.NewGuid(),
                 Username = username,
+                PasswordSalt = Convert.ToBase64String(salt),
+                PasswordHash = Convert.ToBase64String(hash),
                 ContactName = request.ContactName,
                 ContactNumber = request.ContactNumber,
                 ContactEmail = request.ContactEmail,
@@ -85,7 +100,14 @@ namespace NeighborhoodContacts.Server.Features
             return Results.Created($"/api/admin/contacts/{user.Id}", dto);
         }
 
-        private sealed record CreateContactRequest(string Username, string ContactName, string ContactEmail, string ContactNumber, string ContactAddress);
+        private sealed record CreateContactRequest(
+            string Username,
+            string Password,
+            string ContactName,
+            string ContactEmail,
+            string ContactNumber,
+            Guid? PropertyId
+        );
 
         public sealed class AdminContactDto
         {

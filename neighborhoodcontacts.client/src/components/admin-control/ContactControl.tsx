@@ -20,13 +20,21 @@ type Contact = {
     isVisible: boolean
 };
 
+type Property = {
+  id: string;
+  address: string;
+  // add other fields if needed (display name, owner, etc.)
+};
+
 type Props = {
   onChange?: (groupId: string | null) => void;
 };
 
 const ContactControl: React.FC<Props> = ({ onChange }) => {
     const [contacts, setContacts] = useState<Contact[]>([]);
+    const [properties, setProperties] = useState<Property[]>([]);
     const [loading, setLoading] = useState(true);
+    const [propertiesLoading, setPropertiesLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedId, setSelectedId] = useState<string>("");
     const [adding, setAdding] = useState(false);
@@ -35,11 +43,12 @@ const ContactControl: React.FC<Props> = ({ onChange }) => {
     const [newUsername, setNewUsername] = useState<string>("");
     const [newContactNumber, setNewContactNumber] = useState<string>("");
     const [newContactEmail, setNewContactEmail] = useState<string>("");
-    const [newContactAddress, setNewContactAddress] = useState<string>("");
+    const [newPropertyId, setNewPropertyId] = useState<string>("");
     const [newIsActive, setNewIsActive] = useState(true);
     const [newIsVisible, setNewIsVisible] = useState(true);
     const [editing, setEditing] = useState(false);
     const [editName, setEditName] = useState("");
+    const [newPassword, setNewPassword] = useState<string>("");
 
   useEffect(() => {
     let mounted = true;
@@ -56,6 +65,25 @@ const ContactControl: React.FC<Props> = ({ onChange }) => {
         if (mounted) setError(err instanceof Error ? err.message : String(err));
       } finally {
         if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setPropertiesLoading(true);
+      try {
+        const res = await fetch("/api/admin/properties", { credentials: "include" });
+        if (!res.ok) throw new Error(`Failed to load properties (${res.status})`);
+        const list: Property[] = await res.json();
+        if (!mounted) return;
+        setProperties(list);
+      } catch (err) {
+        if (mounted) setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        if (mounted) setPropertiesLoading(false);
       }
     })();
     return () => { mounted = false; };
@@ -82,38 +110,55 @@ const ContactControl: React.FC<Props> = ({ onChange }) => {
     }
   };
 
+  const refreshProperties = async () => {
+    setPropertiesLoading(true);
+    try {
+      const res = await fetch("/api/admin/properties", { credentials: "include" });
+      if (!res.ok) throw new Error(`Failed to load properties (${res.status})`);
+      const list: Property[] = await res.json();
+      setProperties(list);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setPropertiesLoading(false);
+    }
+  };
+
   const handleAdd = async () => {
     if (!newUsername.trim()) return setError("Username is required.");
+    if (!newPassword.trim()) return setError("Password is required.");
     if (!newContactName.trim()) return setError("ContactName is required.");
     if (!newContactNumber.trim()) return setError("ContactNumber is required.");
-    if (!newContactAddress.trim()) return setError("ContactAddress is required.");
     if (!newContactEmail.trim()) return setError("ContactEmail is required.");
-      setError(null);
+    if (!newPropertyId.trim()) return setError("Property selection is required.");
+    setError(null);
 
-    
     try {
       const res = await fetch("/api/admin/contacts", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-              username: newUsername.trim(),
-              contactName: newContactName.trim(),
-              contactNumber: newContactNumber.trim(),
-              contactEmail: newContactEmail.trim(),
-              contactAddress: newContactAddress.trim(),
-          }),
+        body: JSON.stringify({
+          username: newUsername.trim(),
+          password: newPassword.trim(),
+          contactName: newContactName.trim(),
+          contactNumber: newContactNumber.trim(),
+          contactEmail: newContactEmail.trim(),
+          propertyId: newPropertyId.trim()
+        }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         throw new Error(body?.error ?? `Create failed (${res.status})`);
       }
-    await refresh();
-    setNewUsername("");
-    setNewContactName("");
-    setNewContactEmail("");
-    setNewContactNumber("");
-    setNewContactAddress("");
+      await refresh();
+      await refreshProperties();
+      setNewUsername("");
+      setNewPassword("");
+      setNewContactName("");
+      setNewContactEmail("");
+      setNewContactNumber("");
+      setNewPropertyId("");
       setAdding(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -197,21 +242,32 @@ const ContactControl: React.FC<Props> = ({ onChange }) => {
 
       {adding && (
         <div className="mt-2 d-flex gap-2 align-items-center">
-            <input className="form-control form-control-sm w-auto" placeholder="Username" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} />
-            <input className="form-control form-control-sm w-auto" placeholder="Name" value={newContactName} onChange={(e) => setNewContactName(e.target.value)} />
-            <input className="form-control form-control-sm w-auto" placeholder="Phone Number" value={newContactNumber} onChange={(e) => setNewContactNumber(e.target.value)} />
-            <input className="form-control form-control-sm w-auto" placeholder="Email" value={newContactEmail} onChange={(e) => setNewContactEmail(e.target.value)} />
-            <input className="form-control form-control-sm w-auto" placeholder="Address" value={newContactAddress} onChange={(e) => setNewContactAddress(e.target.value)} />
-            <button className="btn btn-sm btn-success" onClick={handleAdd}>Confirm</button>
-                  <button className="btn btn-sm btn-outline-secondary" onClick={() => {
-                      setAdding(false);
-                      setNewUsername("");
-                      setNewContactName("");
-                      setNewContactEmail("");
-                      setNewContactNumber("");
-                      setNewContactAddress("");
-                      setError(null);
-                  }}>Cancel</button>
+          <input className="form-control form-control-sm w-auto" placeholder="Username" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} />
+          <input className="form-control form-control-sm w-auto" placeholder="Password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+          <input className="form-control form-control-sm w-auto" placeholder="Name" value={newContactName} onChange={(e) => setNewContactName(e.target.value)} />
+          <input className="form-control form-control-sm w-auto" placeholder="Phone Number" value={newContactNumber} onChange={(e) => setNewContactNumber(e.target.value)} />
+          <input className="form-control form-control-sm w-auto" placeholder="Email" value={newContactEmail} onChange={(e) => setNewContactEmail(e.target.value)} />
+          {propertiesLoading ? (
+            <select className="form-select form-select-sm w-auto" disabled>
+              <option>Loading properties…</option>
+            </select>
+          ) : (
+            <select className="form-select form-select-sm w-auto" value={newPropertyId} onChange={(e) => setNewPropertyId(e.target.value)}>
+              <option value="">Select property</option>
+              {properties.map(p => <option key={p.id} value={p.id}>{p.address}</option>)}
+            </select>
+          )}
+          <button className="btn btn-sm btn-success" onClick={handleAdd}>Confirm</button>
+          <button className="btn btn-sm btn-outline-secondary" onClick={() => {
+            setAdding(false);
+            setNewUsername("");
+            setNewPassword("");
+            setNewContactName("");
+            setNewContactEmail("");
+            setNewContactNumber("");
+            setNewPropertyId("");
+            setError(null);
+          }}>Cancel</button>
         </div>
       )}
 
