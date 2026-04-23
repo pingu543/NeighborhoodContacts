@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-
+//import type { User } from '../../context/AuthContext'
 
 export type ContactDetails = {
     id: string;
@@ -9,23 +9,25 @@ export type ContactDetails = {
     AboutMe?: string;
     NewPassword?: string;
     isVisible?: boolean;
-    isAcitive?: boolean;
+    isActive?: boolean;
     isAdmin?: boolean;
 };
 
+
+
 type Props = {
     preferAdmin?: boolean;
-    pageSize?: number;
+   
     onSelect?: (id: string) => void;
     onError?: (msg: string) => void;
 };
 
 // Fetch and displlay the contact details
-const ContactDetails: React.FC<Props> = ({ preferAdmin = false, pageSize = 10, onSelect, onError }) => {
+const ContactDetails: React.FC<Props> = ({ preferAdmin = false, onError }) => {
     const [contact, setContact] = useState<ContactDetails>();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
+    
 
     useEffect(() => {
         let mounted = true;
@@ -34,21 +36,31 @@ const ContactDetails: React.FC<Props> = ({ preferAdmin = false, pageSize = 10, o
             setError(null);
             try {
                 // Build endpoint: if preferAdmin, optionally include propertyGroupId query param
-                let endpoint = preferAdmin ? "/api/admin/contacts" : "/api/contacts";
+                //let endpoint = preferAdmin ? "/api/admin/contacts" : "/api/contacts";
+               
                 if (preferAdmin) {
-                    const qp = new URLSearchParams({ propertyGroupId: selectedGroupId });
-                    endpoint = `${endpoint}?${qp.toString()}`;
+                    const endpoint = "/api/contact/c976b82c-506b-4bf1-bdb6-21f60f6a5dd5"
+
+                    const res = await fetch(endpoint, { credentials: "include" });
+
+                    if (!res.ok) {
+                        throw new Error(`Failed to load contacts (${res.status})`);
+                    }
+
+                    const details = await res.json();
+
+                    if (!mounted) return;
+                    setContact(details);
                 }
+                else
+                {
 
-                const res = await fetch(endpoint, { credentials: "include" });
-
-                if (!res.ok) {
-                    throw new Error(`Failed to load contacts (${res.status})`);
                 }
+               
+               
 
-                const list = await res.json();
-                if (!mounted) return;
-                setContacts(list);
+                
+               
             } catch (err) {
                 const msg = err instanceof Error ? err.message : String(err);
                 if (mounted) {
@@ -67,46 +79,42 @@ const ContactDetails: React.FC<Props> = ({ preferAdmin = false, pageSize = 10, o
 
     if (loading) return <div>Loading contacts…</div>;
     if (error) return <div className="text-danger">Error: {error}</div>;
-    if (contact) return <div>No contact found.</div>;
+    if (!contact || contact == undefined) return <div>No contact found.</div>;
+    
 
-    if (preferAdmin == true) return 
-            {contact.map((d) => (
+    if (preferAdmin == true) return( 
+   
                     <div>
-                        <div>{d.contactName}</div>  <button>Change Name</button>
-                        <div>{d.contactEmail}</div>  <button>Change Email</button>
-                        <div>{d.contactNumber}</div>  <button>Change Number</button>
-                        <div>{d.contactAboutMe}</div>  <button>Change About Me</button>
-                        <div>{d.contactNewPassword}</div>  <button>Change Password</button>
-                        <div>{d.isAdmin}</div>  <button>Change Admin</button>
-                        <div>{d.isVisible}</div>  <button>Change Visiblity</button>
-                        <div>{d.isActive}</div>  <button>Change Active</button>
+                       {/* <div>{contact.contactName}</div>  <button>Change Name</button>
+                        <div>{contact.contactEmail}</div>  <button>Change Email</button>
+                        <div>{contact.contactNumber}</div>  <button>Change Number</button>
+                        <div>{contact.AboutMe}</div>  <button>Change About Me</button>
+                        <div>{contact.NewPassword}</div>  <button>Change Password</button>
+                        <div>{contact.isAdmin}</div>  <button>Change Admin</button>
+                        <div>{contact.isVisible}</div>  <button>Change Visiblity</button>
+                        <div>{contact.isActive}</div>  <button>Change Active</button>*/}
                         <button>Save</button>
 
                     </div>
+                )
+            
                 
-            ))}
-
-    if (preferAdmin == false) return 
-    {contact.map((d) => (
+    if (preferAdmin == false) return(
+    
             <div>
-                <div>{d.contactName}</div>  <button>Change Name</button>
-                <div>{d.contactEmail}</div>  <button>Change Email</button>
-                <div>{d.contactNumber}</div>  <button>Change Number</button>
-                <div>{d.contactAboutMe}</div>  <button>Change About Me</button>
-                <div>{d.contactNewPassword}</div>  <button>Change Password</button>
+                <div>{contact.id && <button>Change Name</button>}</div>  
+                <div>{contact.contactName && <button>Change Name</button>}</div> 
+                <div>{contact.contactEmail && <button>Change Email</button>}</div>  
+                <div>{contact.contactNumber && <button>Change Number</button>}</div>  
+                <div>{contact.AboutMe && <button>Change About Me</button>}</div>  
+            <div>{contact.NewPassword && <button>Change Password</button>}</div> {/* need to do something else about password */  }
                 <button>Save</button>
 
             </div>
 
-        ))
-    }
+     )
     
-    return (
-        <div>
-            
-
-        </div> 
-  );
+   
 }
 
 export default ContactDetails;
