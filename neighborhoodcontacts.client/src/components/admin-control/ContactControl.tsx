@@ -38,14 +38,12 @@ const ContactControl: React.FC<Props> = ({ onChange }) => {
     const [error, setError] = useState<string | null>(null);
     const [selectedId, setSelectedId] = useState<string>("");
     const [adding, setAdding] = useState(false);
-    const [newContact, setNewContact] = useState<Contact>();
     const [newContactName, setNewContactName] = useState<string>("");
     const [newUsername, setNewUsername] = useState<string>("");
     const [newContactNumber, setNewContactNumber] = useState<string>("");
     const [newContactEmail, setNewContactEmail] = useState<string>("");
     const [newPropertyId, setNewPropertyId] = useState<string>("");
-    const [newIsActive, setNewIsActive] = useState(true);
-    const [newIsVisible, setNewIsVisible] = useState(true);
+    
     const [editing, setEditing] = useState(false);
     const [editName, setEditName] = useState("");
     const [newPassword, setNewPassword] = useState<string>("");
@@ -226,7 +224,7 @@ const ContactControl: React.FC<Props> = ({ onChange }) => {
       ) : error ? (
         <div className="text-danger">{error}</div>
       ) : (
-        <select className="form-select form-select-sm w-auto" value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
+        <select aria-label="Contact group" className="form-select form-select-sm w-auto" value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
           <option value="">All contacts</option>
           {contacts.map((g) => <option key={g.id} value={g.id}>{g.username}</option>)}
         </select>
@@ -248,11 +246,11 @@ const ContactControl: React.FC<Props> = ({ onChange }) => {
           <input className="form-control form-control-sm w-auto" placeholder="Phone Number" value={newContactNumber} onChange={(e) => setNewContactNumber(e.target.value)} />
           <input className="form-control form-control-sm w-auto" placeholder="Email" value={newContactEmail} onChange={(e) => setNewContactEmail(e.target.value)} />
           {propertiesLoading ? (
-            <select className="form-select form-select-sm w-auto" disabled>
+            <select aria-label="Properties (loading)" className="form-select form-select-sm w-auto" disabled>
               <option>Loading properties…</option>
             </select>
           ) : (
-            <select className="form-select form-select-sm w-auto" value={newPropertyId} onChange={(e) => setNewPropertyId(e.target.value)}>
+            <select aria-label="New property" className="form-select form-select-sm w-auto" value={newPropertyId} onChange={(e) => setNewPropertyId(e.target.value)}>
               <option value="">Select property</option>
               {properties.map(p => <option key={p.id} value={p.id}>{p.address}</option>)}
             </select>
@@ -273,7 +271,7 @@ const ContactControl: React.FC<Props> = ({ onChange }) => {
 
       {editing && (
         <div className="mt-2 d-flex gap-2 align-items-center">
-          <input className="form-control form-control-sm w-auto" value={editName} onChange={(e) => setEditName(e.target.value)} />
+          <input aria-label="Edit group name" className="form-control form-control-sm w-auto" value={editName} onChange={(e) => setEditName(e.target.value)} />
           <button className="btn btn-sm btn-success" onClick={confirmEdit}>Confirm</button>
           <button className="btn btn-sm btn-outline-secondary" onClick={() => { setEditing(false); setEditName(""); setError(null); }}>Cancel</button>
         </div>

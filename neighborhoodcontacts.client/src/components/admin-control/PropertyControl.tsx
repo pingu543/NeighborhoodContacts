@@ -163,7 +163,7 @@ const PropertyControl: React.FC = () => {
             ) : error ? (
                 <div className="text-danger">{error}</div>
             ) : (
-                <select className="form-select form-select-sm w-auto" value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
+                <select aria-label="Property selector" className="form-select form-select-sm w-auto" value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
                     <option value="">All properties</option>
                     {properties.map((p) => (
                         <option key={p.id} value={p.id}>
@@ -183,8 +183,8 @@ const PropertyControl: React.FC = () => {
 
             {adding && (
                 <div className="mt-2 d-flex gap-2 align-items-center">
-                    <input className="form-control form-control-sm w-auto" placeholder="Full address" value={newAddress} onChange={(e) => setNewAddress(e.target.value)} />
-                    <select className="form-select form-select-sm w-auto" value={newGroupId} onChange={(e) => setNewGroupId(e.target.value)}>
+                    <input aria-label="New property address" className="form-control form-control-sm w-auto" placeholder="Full address" value={newAddress} onChange={(e) => setNewAddress(e.target.value)} />
+                    <select aria-label="New property group" className="form-select form-select-sm w-auto" value={newGroupId} onChange={(e) => setNewGroupId(e.target.value)}>
                         <option value="">Select group</option>
                         {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
                     </select>
@@ -195,8 +195,8 @@ const PropertyControl: React.FC = () => {
 
             {editing && (
                 <div className="mt-2 d-flex gap-2 align-items-center">
-                    <input className="form-control form-control-sm w-auto" value={editAddress} onChange={(e) => setEditAddress(e.target.value)} />
-                    <select className="form-select form-select-sm w-auto" value={editGroupId} onChange={(e) => setEditGroupId(e.target.value)}>
+                    <input aria-label="Edit property address" className="form-control form-control-sm w-auto" value={editAddress} onChange={(e) => setEditAddress(e.target.value)} />
+                    <select aria-label="Edit property group" className="form-select form-select-sm w-auto" value={editGroupId} onChange={(e) => setEditGroupId(e.target.value)}>
                         <option value="">Select group</option>
                         {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
                     </select>

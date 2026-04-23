@@ -42,6 +42,7 @@ namespace NeighborhoodContacts.Server.Infrastructure
             };
 
             db.Users.Add(admin);
+            
             // also seed a non-admin user
             var userUsername = "user";
             var userPassword = "user";
@@ -64,6 +65,50 @@ namespace NeighborhoodContacts.Server.Infrastructure
             };
 
             db.Users.Add(user);
+
+            // also seed another non-admin user
+            var userUsername2 = "user2";
+            var userPassword2 = "user2";
+
+            var userSalt2 = RandomNumberGenerator.GetBytes(16);
+            var userHash2 = AuthEndpoints.HashPassword(userPassword2, userSalt2);
+            var user2 = new User
+            {
+                Id = Guid.NewGuid(),
+                Username = userUsername2,
+                PasswordSalt = Convert.ToBase64String(userSalt2),
+                PasswordHash = Convert.ToBase64String(userHash2),
+                ContactName = "User II",
+                ContactNumber = "0987654321",
+                ContactEmail = "user2@user.com",
+                IsActive = true,
+                IsVisible = true,
+                IsAdmin = false,
+                Created = DateTime.UtcNow
+            };
+
+            db.Users.Add(user2);
+
+            // seed a property group with two properties
+            var propertyGroup = new NeighborhoodContacts.Server.Data.Entities.PropertyGroup
+            {
+                Id = Guid.NewGuid(),
+                Name = "Default Group",
+                Properties =
+                [
+                    new() {
+                        Id = Guid.NewGuid(),
+                        Address = "123 Demo St"
+                    },
+                    new() {
+                        Id = Guid.NewGuid(),
+                        Address = "456 Test Ave"
+                    }
+                ]
+            };
+
+            db.PropertyGroups.Add(propertyGroup);
+
             await db.SaveChangesAsync();
         }
     }
