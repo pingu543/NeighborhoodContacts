@@ -15,7 +15,7 @@ type Props = {
 };
 
 const PropertyGroupControl: React.FC<Props> = ({ onChange }) => {
-  const [groups, setGroups] = useState<PropertyGroup[]>([]);
+    const [groups, setGroups] = useState<PropertyGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string>("");
@@ -30,9 +30,10 @@ const PropertyGroupControl: React.FC<Props> = ({ onChange }) => {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch("/api/admin/property-groups", { credentials: "include" });
+          const res = await fetch("/api/admin/property-groups",
+              { credentials: "include" });
         if (!res.ok) throw new Error(`Failed to load property groups (${res.status})`);
-        const list: PropertyGroup[] = await res.json();
+          const list: PropertyGroup[] = await res.json();
         if (!mounted) return;
         setGroups(list);
       } catch (err) {
