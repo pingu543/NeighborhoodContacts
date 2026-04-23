@@ -32,19 +32,10 @@ function AdminControl() {
     }
 
     return (
-        <div className="mb-3 p-3 border rounded bg-light">
+        <div className="mb-3 p-3">
             <PropertyGroupControl onChange={handleGroupChange} />
             <PropertyControl />
-
-            {/* TODO: add other admin controls (Add contact, Add/Edit property, etc.) here */}
-            <div className="mt-3">
-                <button className="btn btn-sm btn-outline-secondary me-2" disabled>
-                    Contacts (TODO)
-                </button>
-                    Properties (TODO)
-                </button>
-                <ContactControl onChange={handleContactChange}/>
-            </div>
+            <ContactControl onChange={handleContactChange} />
         </div>
     );
 }
