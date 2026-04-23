@@ -24,6 +24,10 @@ namespace NeighborhoodContacts.Server.Features
                .RequireAuthorization()
                .WithName("ChangeMyPassword")
                .WithTags("Users, Password");
+                app.MapPut("/api/users/me", UpdateMyProfile)
+                    .RequireAuthorization()
+                    .WithName("UpdateMyProfile")
+                    .WithTags("Users");
 
             return app;
         }
@@ -59,6 +63,7 @@ namespace NeighborhoodContacts.Server.Features
 
         private static async Task<IResult> GetUserById(Guid id, ClaimsPrincipal user, AppDbContext db, CancellationToken ct)
         {
+
             var isAdmin = user?.IsInRole("Admin") == true || user?.HasClaim(ClaimTypes.Role, "Admin") == true;
             var userIdClaim = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             _ = Guid.TryParse(userIdClaim, out Guid currentUserId);
@@ -66,18 +71,39 @@ namespace NeighborhoodContacts.Server.Features
 
             if (!isAdmin && !isOwner)
             {
-                var publicDto = await db.Users
+                // Get the requesting user's property group id
+                var requester = await db.Users
+                    .Include(u => u.Property)
+                    .ThenInclude(p => p.PropertyGroup)
                     .AsNoTracking()
-                    .Where(u => u.Id == id && u.IsVisible && u.IsActive)
-                    .Select(u => new
-                    {
-                        u.Id,
-                        u.ContactName,
-                        PropertyAddress = u.Property != null ? u.Property.Address : null
-                    })
-                    .FirstOrDefaultAsync(ct);
+                    .FirstOrDefaultAsync(u => u.Id == currentUserId, ct);
 
-                return publicDto == null ? Results.NotFound() : Results.Ok(publicDto);
+                var target = await db.Users
+                    .Include(u => u.Property)
+                    .ThenInclude(p => p.PropertyGroup)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.Id == id && u.IsVisible && u.IsActive, ct);
+
+                if (requester == null || target == null)
+                    return Results.NotFound();
+
+                var requesterGroupId = requester.Property?.PropertyGroupId;
+                var targetGroupId = target.Property?.PropertyGroupId;
+
+                if (requesterGroupId == null || targetGroupId == null || requesterGroupId != targetGroupId)
+                    return Results.NotFound();
+
+                var publicDto = new
+                {
+                    target.Id,
+                    target.ContactName,
+                    target.ContactEmail,
+                    target.ContactNumber,
+                    target.AboutMe,
+                    PropertyAddress = target.Property != null ? target.Property.Address : null
+                };
+
+                return Results.Ok(publicDto);
             }
 
             var detailed = await db.Users
@@ -152,5 +178,26 @@ namespace NeighborhoodContacts.Server.Features
         }
 
         private sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
+
+        private static async Task<IResult> UpdateMyProfile(ClaimsPrincipal user, UpdateMyProfileRequest request, AppDbContext db, CancellationToken ct)
+        {
+            if (request == null) return Results.BadRequest(new { error = "Request body is required." });
+
+            var userIdClaim = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdClaim, out var uid)) return Results.Forbid();
+
+            var dbUser = await db.Users.FirstOrDefaultAsync(u => u.Id == uid, ct);
+            if (dbUser == null) return Results.NotFound();
+
+            if (request.ContactName != null) dbUser.ContactName = request.ContactName;
+            if (request.ContactEmail != null) dbUser.ContactEmail = request.ContactEmail;
+            if (request.ContactNumber != null) dbUser.ContactNumber = request.ContactNumber;
+            if (request.AboutMe != null) dbUser.AboutMe = request.AboutMe;
+
+            await db.SaveChangesAsync(ct);
+            return Results.NoContent();
+        }
+
+        private sealed record UpdateMyProfileRequest(string? ContactName, string? ContactEmail, string? ContactNumber, string? AboutMe);
     }
 }
