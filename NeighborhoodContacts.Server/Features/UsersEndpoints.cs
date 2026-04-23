@@ -43,6 +43,8 @@ namespace NeighborhoodContacts.Server.Features
                             x.ContactName,
                             x.ContactEmail,
                             x.ContactNumber,
+                            x.AboutMe,
+                            x.PropertyId,
                             PropertyAddress = x.Property != null ? x.Property.Address : null,
                             x.IsActive,
                             x.IsVisible,
@@ -88,6 +90,8 @@ namespace NeighborhoodContacts.Server.Features
                     u.ContactName,
                     u.ContactEmail,
                     u.ContactNumber,
+                    u.AboutMe,
+                    u.PropertyId,
                     PropertyAddress = u.Property != null ? u.Property.Address : null,
                     u.IsActive,
                     u.IsVisible,
@@ -106,6 +110,8 @@ namespace NeighborhoodContacts.Server.Features
                 detailed.ContactName,
                 detailed.ContactEmail,
                 detailed.ContactNumber,
+                detailed.AboutMe,
+                detailed.PropertyId,
                 detailed.PropertyAddress
             };
 
