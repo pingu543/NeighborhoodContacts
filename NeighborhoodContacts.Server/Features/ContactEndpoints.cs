@@ -128,8 +128,12 @@ namespace NeighborhoodContacts.Server.Features
             pdfTable.Style.HeaderStyle.StringFormat = new PdfStringFormat(PdfTextAlignment.Center);
 
             pdfTable.Draw(page, new PointF(0, 60));
+
+            MemoryStream stream = new MemoryStream();
+
+            pdf.SaveToStream(stream);
  
-            return Results.Ok(pdf);
+            return Results.File(stream, "application/pdf", "ContactList.pdf");
         }
     }
 
