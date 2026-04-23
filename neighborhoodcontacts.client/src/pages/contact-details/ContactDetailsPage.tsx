@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 import ContactsList from "../../components/contacts/ContactsList";
 import AdminControl from "../../components/admin-control/AdminControlComponent";
 import { useAuth } from "../../context/AuthContext";
+import ContactDetails from "../../components/contacts/ContactDetails";
 
 
 function ContactDetailsPage() {
@@ -32,7 +33,7 @@ function ContactDetailsPage() {
               <div className="mb-3">Please sign in to view this contact.</div>
           ) : ( 
                       <div>
-                        <ContactsList></ContactsList>
+                        <ContactDetails></ContactDetails>
                       </div>
           )}
       </div>
