@@ -1,5 +1,6 @@
 import PropertyGroupControl from "./PropertyGroupControl";
 import PropertyControl from "./PropertyControl";
+import ContactControl from "./ContactControl"
 
 // A long bar with buttons:
 // Property Group.
@@ -26,17 +27,15 @@ function AdminControl() {
         console.log("Selected property group:", groupId);
     };
 
+    const handleContactChange = (contactId: string | null) => {
+        console.log("Selected Contact:", contactId);
+    }
+
     return (
-        <div className="mb-3 p-3 border rounded bg-light">
+        <div className="mb-3 p-3">
             <PropertyGroupControl onChange={handleGroupChange} />
             <PropertyControl />
-
-            {/* TODO: add other admin controls (Add contact, Add/Edit property, etc.) here */}
-            <div className="mt-3">
-                <button className="btn btn-sm btn-outline-secondary me-2" disabled>
-                    Contacts (TODO)
-                </button>
-            </div>
+            <ContactControl onChange={handleContactChange} />
         </div>
     );
 }
