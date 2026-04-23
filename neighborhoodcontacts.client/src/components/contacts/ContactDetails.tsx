@@ -13,11 +13,8 @@ export type ContactDetails = {
     isAdmin?: boolean;
 };
 
-
-
 type Props = {
     preferAdmin?: boolean;
-   
     onSelect?: (id: string) => void;
     onError?: (msg: string) => void;
 };
@@ -27,7 +24,8 @@ const ContactDetails: React.FC<Props> = ({ preferAdmin = false, onError }) => {
     const [contact, setContact] = useState<ContactDetails>();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    
+
+    // add way to check if owner
 
     useEffect(() => {
         let mounted = true;
@@ -37,9 +35,10 @@ const ContactDetails: React.FC<Props> = ({ preferAdmin = false, onError }) => {
             try {
                 // Build endpoint: if preferAdmin, optionally include propertyGroupId query param
                 //let endpoint = preferAdmin ? "/api/admin/contacts" : "/api/contacts";
-               
+
+                // use this endpoint if admin or owner
                 if (preferAdmin) {
-                    const endpoint = "/api/contact/c976b82c-506b-4bf1-bdb6-21f60f6a5dd5"
+                    const endpoint = "/api/user/c976b82c-506b-4bf1-bdb6-21f60f6a5dd5"  // change id depending on context
 
                     const res = await fetch(endpoint, { credentials: "include" });
 
@@ -52,9 +51,11 @@ const ContactDetails: React.FC<Props> = ({ preferAdmin = false, onError }) => {
                     if (!mounted) return;
                     setContact(details);
                 }
+
+                // if none of the above use this endpoint
                 else
                 {
-
+                    const endpoint = "endpoint";
                 }
                
                
@@ -81,33 +82,52 @@ const ContactDetails: React.FC<Props> = ({ preferAdmin = false, onError }) => {
     if (error) return <div className="text-danger">Error: {error}</div>;
     if (!contact || contact == undefined) return <div>No contact found.</div>;
     
-
+    // if admin
     if (preferAdmin == true) return( 
    
                     <div>
-                       {/* <div>{contact.contactName}</div>  <button>Change Name</button>
-                        <div>{contact.contactEmail}</div>  <button>Change Email</button>
-                        <div>{contact.contactNumber}</div>  <button>Change Number</button>
-                        <div>{contact.AboutMe}</div>  <button>Change About Me</button>
-                        <div>{contact.NewPassword}</div>  <button>Change Password</button>
+                       
+                        <div>{contact.contactName && <button>Change Name</button>}</div>
+                        <div>{contact.contactEmail && <button>Change Email</button>}</div>
+                        <div>{contact.contactNumber && <button>Change Number</button>}</div>
+                        <div>{contact.AboutMe && <button>Change About Me</button>}</div>
+                        <div>{contact.NewPassword && <button>Change Password</button>}</div>
                         <div>{contact.isAdmin}</div>  <button>Change Admin</button>
                         <div>{contact.isVisible}</div>  <button>Change Visiblity</button>
-                        <div>{contact.isActive}</div>  <button>Change Active</button>*/}
+                        <div>{contact.isActive}</div>  <button>Change Active</button>
                         <button>Save</button>
 
                     </div>
-                )
+    )
+
+
+    /*
+    if (owner) return( 
+   
+                    <div>
+                       
+                        <div>{contact.contactName && <button>Change Name</button>}</div>
+                        <div>{contact.contactEmail && <button>Change Email</button>}</div>
+                        <div>{contact.contactNumber && <button>Change Number</button>}</div>
+                        <div>{contact.AboutMe && <button>Change About Me</button>}</div>
+                        <div>{contact.NewPassword && <button>Change Password</button>}</div>
+                        <button>Save</button>
+
+                    </div>
+    
+    
+    */ 
             
-                
+    // if normal user who is NOT owner
     if (preferAdmin == false) return(
     
             <div>
-                <div>{contact.id && <button>Change Name</button>}</div>  
+               
                 <div>{contact.contactName && <button>Change Name</button>}</div> 
                 <div>{contact.contactEmail && <button>Change Email</button>}</div>  
                 <div>{contact.contactNumber && <button>Change Number</button>}</div>  
                 <div>{contact.AboutMe && <button>Change About Me</button>}</div>  
-            <div>{contact.NewPassword && <button>Change Password</button>}</div> {/* need to do something else about password */  }
+                <div>{contact.NewPassword && <button>Change Password</button> }</div> {/* need to do something else about password */  }
                 <button>Save</button>
 
             </div>
