@@ -42,6 +42,28 @@ namespace NeighborhoodContacts.Server.Infrastructure
             };
 
             db.Users.Add(admin);
+            // also seed a non-admin user
+            var userUsername = "user";
+            var userPassword = "user";
+
+            var userSalt = RandomNumberGenerator.GetBytes(16);
+            var userHash = AuthEndpoints.HashPassword(userPassword, userSalt);
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                Username = userUsername,
+                PasswordSalt = Convert.ToBase64String(userSalt),
+                PasswordHash = Convert.ToBase64String(userHash),
+                ContactName = "User User",
+                ContactNumber = "0987654321",
+                ContactEmail = "user@user.com",
+                IsActive = true,
+                IsVisible = true,
+                IsAdmin = false,
+                Created = DateTime.UtcNow
+            };
+
+            db.Users.Add(user);
             await db.SaveChangesAsync();
         }
     }

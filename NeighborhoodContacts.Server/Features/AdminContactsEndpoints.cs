@@ -18,6 +18,14 @@ namespace NeighborhoodContacts.Server.Features
                .RequireAuthorization("Admin")
                .WithName("AdminCreateContact")
                .WithTags("Admin", "Contacts");
+                app.MapPut("/api/admin/contacts/{id:guid}", UpdateContact)
+                    .RequireAuthorization("Admin")
+                    .WithName("AdminUpdateContact")
+                    .WithTags("Admin", "Contacts");
+                app.MapDelete("/api/admin/contacts/{id:guid}", DeleteContact)
+                    .RequireAuthorization("Admin")
+                    .WithName("AdminDeleteContact")
+                    .WithTags("Admin", "Contacts");
             return app;
         }
 
@@ -120,5 +128,65 @@ namespace NeighborhoodContacts.Server.Features
             public bool IsActive { get; init; }
             public bool IsVisible { get; init; }
         }
+
+        private static async Task<IResult> UpdateContact(Guid id, UpdateAdminContactRequest request, AppDbContext db, CancellationToken ct)
+        {
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
+            if (user == null) return Results.NotFound();
+
+            if (request == null) return Results.BadRequest(new { error = "Request body is required." });
+
+            if (!string.IsNullOrWhiteSpace(request.Username))
+            {
+                var uname = request.Username.Trim();
+                if (uname.Length < 1) return Results.BadRequest(new { error = "Username must be at least 1 character long." });
+                var exists = await db.Users.AnyAsync(u => u.Username == uname && u.Id != id, ct);
+                if (exists) return Results.Conflict(new { error = "A contact with that username already exists." });
+                user.Username = uname;
+            }
+
+            if (request.ContactName != null) user.ContactName = request.ContactName;
+            if (request.ContactNumber != null) user.ContactNumber = request.ContactNumber;
+            if (request.ContactEmail != null) user.ContactEmail = request.ContactEmail;
+            if (request.AboutMe != null) user.AboutMe = request.AboutMe;
+
+            if (request.PropertyId.HasValue)
+            {
+                if (request.PropertyId == Guid.Empty) user.PropertyId = null;
+                else
+                {
+                    var prop = await db.Properties.FindAsync(new object[] { request.PropertyId.Value }, ct);
+                    if (prop == null) return Results.BadRequest(new { error = "Property not found." });
+                    user.PropertyId = request.PropertyId;
+                }
+            }
+
+            if (request.IsActive.HasValue) user.IsActive = request.IsActive.Value;
+            if (request.IsVisible.HasValue) user.IsVisible = request.IsVisible.Value;
+
+            await db.SaveChangesAsync(ct);
+            return Results.NoContent();
+        }
+
+        private static async Task<IResult> DeleteContact(Guid id, AppDbContext db, CancellationToken ct)
+        {
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
+            if (user == null) return Results.NotFound();
+
+            db.Users.Remove(user);
+            await db.SaveChangesAsync(ct);
+            return Results.NoContent();
+        }
+
+        private sealed record UpdateAdminContactRequest(
+            string? Username,
+            string? ContactName,
+            string? ContactEmail,
+            string? ContactNumber,
+            string? AboutMe,
+            Guid? PropertyId,
+            bool? IsActive,
+            bool? IsVisible
+        );
     }
 }
