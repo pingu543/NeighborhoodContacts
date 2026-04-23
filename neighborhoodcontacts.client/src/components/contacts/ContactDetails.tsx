@@ -8,15 +8,6 @@ export type ContactDetails = {
     contactNumber?: string;
     AboutMe?: string;
     NewPassword?: string;
-};
-
-export type AdminContactDetails = {
-    id: string;
-    contactName: string;
-    contactEmail?: string;
-    contactNumber?: string;
-    AboutMe?: string;
-    NewPassword?: string;
     isVisible?: boolean;
     isAcitive?: boolean;
     isAdmin?: boolean;
@@ -44,7 +35,7 @@ const ContactDetails: React.FC<Props> = ({ preferAdmin = false, pageSize = 10, o
             try {
                 // Build endpoint: if preferAdmin, optionally include propertyGroupId query param
                 let endpoint = preferAdmin ? "/api/admin/contacts" : "/api/contacts";
-                if (preferAdmin && selectedGroupId) {
+                if (preferAdmin) {
                     const qp = new URLSearchParams({ propertyGroupId: selectedGroupId });
                     endpoint = `${endpoint}?${qp.toString()}`;
                 }
@@ -78,18 +69,43 @@ const ContactDetails: React.FC<Props> = ({ preferAdmin = false, pageSize = 10, o
     if (error) return <div className="text-danger">Error: {error}</div>;
     if (contact) return <div>No contact found.</div>;
 
-    return (
-        <div>
+    if (preferAdmin == true) return 
             {contact.map((d) => (
-                <div>
-                    <div></div>  <button></button>
+                    <div>
+                        <div>{d.contactName}</div>  <button>Change Name</button>
+                        <div>{d.contactEmail}</div>  <button>Change Email</button>
+                        <div>{d.contactNumber}</div>  <button>Change Number</button>
+                        <div>{d.contactAboutMe}</div>  <button>Change About Me</button>
+                        <div>{d.contactNewPassword}</div>  <button>Change Password</button>
+                        <div>{d.isAdmin}</div>  <button>Change Admin</button>
+                        <div>{d.isVisible}</div>  <button>Change Visiblity</button>
+                        <div>{d.isActive}</div>  <button>Change Active</button>
+                        <button>Save</button>
 
-                </div>
-            
-            
+                    </div>
+                
             ))}
 
-        </div> >
+    if (preferAdmin == false) return 
+    {contact.map((d) => (
+            <div>
+                <div>{d.contactName}</div>  <button>Change Name</button>
+                <div>{d.contactEmail}</div>  <button>Change Email</button>
+                <div>{d.contactNumber}</div>  <button>Change Number</button>
+                <div>{d.contactAboutMe}</div>  <button>Change About Me</button>
+                <div>{d.contactNewPassword}</div>  <button>Change Password</button>
+                <button>Save</button>
+
+            </div>
+
+        ))
+    }
+    
+    return (
+        <div>
+            
+
+        </div> 
   );
 }
 
